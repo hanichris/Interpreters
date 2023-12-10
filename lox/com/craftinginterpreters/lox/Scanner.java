@@ -1,7 +1,9 @@
 package com.craftinginterpreters.lox;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 class Scanner {
     private final String source;
@@ -18,6 +20,27 @@ class Scanner {
     private int current = 0;
     private int line = 1;
     private final List<Token> tokens = new ArrayList<>();
+    private static final Map<String, TokenType> keywords;
+
+    static {
+        keywords = new HashMap<>();
+        keywords.put("and", TokenType.AND);
+        keywords.put("class", TokenType.CLASS);
+        keywords.put("else", TokenType.ELSE);
+        keywords.put("false", TokenType.FALSE);
+        keywords.put("fun", TokenType.FUN);
+        keywords.put("for", TokenType.FOR);
+        keywords.put("if", TokenType.IF);
+        keywords.put("nil", TokenType.NIL);
+        keywords.put("or", TokenType.OR);
+        keywords.put("print", TokenType.PRINT);
+        keywords.put("return", TokenType.RETURN);
+        keywords.put("super", TokenType.SUPER);
+        keywords.put("this", TokenType.THIS);
+        keywords.put("true", TokenType.TRUE);
+        keywords.put("var", TokenType.VAR);
+        keywords.put("while", TokenType.WHILE);
+    }
 
     Scanner(String source) {
         this.source = source;
@@ -49,7 +72,7 @@ class Scanner {
     }
 
     /**
-     * `lookahead` -> A one character lookahead. Only looks at the
+     * peek: Performs a one character lookahead operation. Only looks at the
      * current unconsumed character. The smaller the number of
      * characters the faster the scanner operates.
      */
@@ -57,7 +80,61 @@ class Scanner {
         if (isAtEnd()) return '\0';
         return source.charAt(current);
     }
+
+    private char peekNext() {
+        if (current + 1 >= source.length()) return '\0';
+        return source.charAt(current + 1);
+    }
+
+    private boolean isDigit(char c) {
+        return c >= '0' && c <= '9';
+    }
+
+    private boolean isAlpha(char c) {
+        return (c >= 'a' && c <= 'z') ||
+                (c >= 'A' && c <= 'Z') ||
+                c == '_';
+    }
+
+    private boolean isAlphaNumeric(char c) {
+        return isAlpha(c) || isDigit(c);
+    }
     // End of Utility functions
+
+    private void identifier() {
+        while (isAlphaNumeric(peek())) advance();
+
+        String text = source.substring(start, current);
+        TokenType type = keywords.get(text);
+        if (type == null) type = TokenType.IDENTIFIER;
+        addToken(type);
+    }
+
+    private void number() {
+        while (isDigit(peek())) advance();
+
+        if (peek() == '.' && isDigit(peekNext())) {
+            advance();
+            while (isDigit(peek())) advance();
+        }
+
+        addToken(TokenType.NUMBER,
+                Double.parseDouble(source.substring(start, current)));
+    }
+
+    private void string() {
+        while (peek() != '"' && !isAtEnd()) {
+            if (peek() == '\n') line++;
+            advance();
+        }
+        if (isAtEnd()) {
+            Lox.error(line, "Unterminated string");
+            return;
+        }
+        advance(); // Consumes the closing quotation mark.
+        String value = source.substring(start + 1, current - 1);
+        addToken(TokenType.STRING, value);
+    }
 
     List<Token> scanTokens() {
         while (!isAtEnd()) {
@@ -117,9 +194,26 @@ class Scanner {
                 if (match('/')) {
 //                    A comment proceeds until the end of the line.
                     while (peek() != '\n' && !isAtEnd()) advance();
+                } else if (match('*')) {
+//                    A block comment proceeds until met by the closing `*/` characters
+                    while (!isAtEnd()) {
+                        if (peek() == '\n') line++;
+                        else if (peek() == '*' && peekNext() == '/') break;
+                        advance();
+                    }
+                    if (!isAtEnd()) {
+                        advance(); // Consume the `*` that is followed by `/`
+                        advance(); // Consume the `/` that follows `*`
+                    } else {
+                        Lox.error(line, "Unclosed block comment");
+                    }
+
                 } else {
                     addToken(TokenType.SLASH);
                 }
+                break;
+            case '"':
+                string();
                 break;
             case ' ':
             case '\r':
@@ -129,7 +223,13 @@ class Scanner {
                 line++;
                 break;
             default:
-                Lox.error(line, "Unexpected character.");
+                if (isDigit(c)) {
+                    number();
+                } else if (isAlpha(c)) {
+                    identifier();
+                } else {
+                    Lox.error(line, "Unexpected character.");
+                }
                 break;
         }
     }
