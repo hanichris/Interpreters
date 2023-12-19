@@ -10,7 +10,10 @@ import java.util.List;
 
 public class Lox {
 
+    //Made static so that successive calls to run reuse the same interpreter.
+    private static final Interpreter interpreter = new Interpreter();
     static boolean hadError = false;
+    static boolean hadRuntimeError = false;
     public static void main(String ...args) throws IOException {
         if (args.length > 1) {
             System.out.println("Usage: jlox <script>");
@@ -26,6 +29,7 @@ public class Lox {
         byte[] bytes = Files.readAllBytes(Path.of(path));
         run(new String(bytes, Charset.defaultCharset()));
         if (hadError) System.exit(65);
+        if (hadRuntimeError) System.exit(70);
     }
 
     private static void runPrompt() throws  IOException {
@@ -35,11 +39,12 @@ public class Lox {
         while(true) {
             System.out.print("> ");
             String line = reader.readLine();
-            if (line == null) break;
+            if (line == null || line.trim().equals(".exit")) break;
+            if (line.isEmpty()) continue;
             run(line);
             hadError = false;
         }
-        System.out.println();
+//        System.out.println();
     }
 
     private static void run(String source){
@@ -49,7 +54,7 @@ public class Lox {
         Expr expression = parser.parse();
 
         if (hadError) return;
-        System.out.println(new AstPrinter().print(expression));
+        interpreter.interpret(expression);
     }
 
     static void error(int line, String message) {
@@ -67,5 +72,12 @@ public class Lox {
         } else {
             report(token.line, " at '" + token.lexeme + "'", message);
         }
+    }
+
+    static void runtimeError(RuntimeError error) {
+        System.err.println(error.getMessage() +
+                "\n[line " + error.token.line + "]"
+        );
+        hadRuntimeError = true;
     }
 }
