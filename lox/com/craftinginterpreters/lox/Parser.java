@@ -3,11 +3,21 @@ package com.craftinginterpreters.lox;
 import java.util.List;
 
 class Parser {
+    private static class ParseError extends RuntimeException {
+    }
     private final List<Token> tokens;
     private int current = 0; // points to the next token to be processed.
 
     Parser(List<Token> tokens) {
         this.tokens = tokens;
+    }
+
+    Expr parse() {
+        try {
+            return expression();
+        } catch (ParseError error) {
+            return null;
+        }
     }
 
     /**
@@ -26,7 +36,7 @@ class Parser {
         Expr expr = comparison();
 
         //Must find either a `!=` or `==` else loop terminates.
-        while (match(TokenType.BANG_EQUAL, TokenType.BANG)) {
+        while (match(TokenType.BANG_EQUAL, TokenType.EQUAL_EQUAL)) {
             Token operator = previous();
             Expr right = comparison();
             // Ensures the creation of a left-associative nested tree of binary
@@ -114,6 +124,7 @@ class Parser {
             consume(TokenType.RIGHT_PAREN, "Expected ')' after expression");
             return new Expr.Grouping(expr);
         }
+        throw error(peek(), "Expect expression");
     }
 
     /**
@@ -129,6 +140,15 @@ class Parser {
             }
         }
         return false;
+    }
+
+    /**
+     * consume: Checks whether the next token is of the expected type.
+     * If not, then we've hit an error.
+     */
+    private Token consume(TokenType type, String message) {
+        if (check(type)) return advance();
+        throw error(peek(), message);
     }
 
     /**
@@ -169,5 +189,41 @@ class Parser {
      */
     private Token previous() {
         return tokens.get(current - 1);
+    }
+
+    /**
+     * returns the error instead of throwing it so that the calling method
+     * gets to decide whether to unwind the parser. True for cases where it
+     * is unlikely for the parser to get into a weird state and hence, there
+     * is no need for synchronization.
+     */
+    private ParseError error(Token token, String message) {
+        Lox.error(token, message);
+        return new ParseError();
+    }
+
+    /**
+     * Discards tokens until it finds a statement boundary. The statement is
+     * demarcated by a semicolon and some specific language reserved keywords.
+     */
+    private void synchronize() {
+        advance();
+
+        while (!isAtEnd()) {
+            if (previous().type == TokenType.SEMICOLON) return;
+
+            switch (peek().type) {
+                case TokenType.CLASS:
+                case TokenType.FOR:
+                case TokenType.WHILE:
+                case TokenType.IF:
+                case TokenType.VAR:
+                case TokenType.RETURN:
+                case TokenType.FUN:
+                case TokenType.PRINT:
+                    return;
+            }
+            advance();
+        }
     }
 }
