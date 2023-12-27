@@ -24,7 +24,7 @@ class Parser {
      * expression -> equality;
      */
     private Expr expression() {
-        return equality();
+        return assignment();
     }
 
     /**
@@ -81,6 +81,28 @@ class Parser {
         Expr expr = expression();
         consume(TokenType.SEMICOLON, "Expect ';' after expression.");
         return new Stmt.Expression(expr);
+    }
+
+    private Expr assignment() {
+        Expr expr = equality();
+
+        if (match(TokenType.EQUAL)) {
+            Token equals = previous();
+            Expr value = assignment();
+
+            if (expr instanceof Expr.Variable) {
+                Token name = ((Expr.Variable) expr).name;
+                return new Expr.Assign(name, value);
+            }
+
+            /*
+             * report an error if the left-hand side isn't a valid assignment
+             * target. We don't throw the error since the parser is not in a
+             * confused state where we need to go into panic mode and synchronize.
+             * */
+            error(equals, "Invalid assignment target.");
+        }
+        return expr;
     }
 
     /**
