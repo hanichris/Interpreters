@@ -1,5 +1,6 @@
 package com.craftinginterpreters.lox;
 
+import java.util.ArrayList;
 import java.util.List;
 
 class Parser {
@@ -12,12 +13,10 @@ class Parser {
         this.tokens = tokens;
     }
 
-    Expr parse() {
-        try {
-            return expression();
-        } catch (ParseError error) {
-            return null;
-        }
+    List<Stmt> parse() {
+        List<Stmt> statements = new ArrayList<>();
+        while (!isAtEnd()) statements.add(statement());
+        return statements;
     }
 
     /**
@@ -26,6 +25,32 @@ class Parser {
      */
     private Expr expression() {
         return equality();
+    }
+
+    private Stmt statement() {
+        if (match(TokenType.PRINT)) return printStatement();
+        return expressionStatement();
+    }
+
+    /**
+     * Implementation of the 'print' statement within the language.
+     * It parses the subsequent expression, consumes the terminating
+     * SEMICOLON and emits a syntax tree.
+     */
+    private Stmt printStatement() {
+        Expr value = expression();
+        consume(TokenType.SEMICOLON, "Expect ';' after value.");
+        return new Stmt.Print(value);
+    }
+
+    /**
+     * Parses the expression, consumes the terminating SEMICOLON and wraps
+     * the `Expr` in the appropriate Stmt before returning it.
+     */
+    private Stmt expressionStatement() {
+        Expr expr = expression();
+        consume(TokenType.SEMICOLON, "Expect ';' after expression.");
+        return new Stmt.Expression(expr);
     }
 
     /**
