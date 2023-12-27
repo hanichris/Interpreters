@@ -3,6 +3,9 @@ package com.craftinginterpreters.lox;
 import java.util.List;
 
 class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
+    // Stored as a field so that the variables stay in memory as long
+    // as the interpreter is still running.
+    private Environment environment = new Environment();
 
     void interpret(List<Stmt> statements) {
         try {
@@ -94,6 +97,11 @@ class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
         return null;
     }
 
+    @Override
+    public Object visitVariableExpr(Expr.Variable expr) {
+        return environment.get(expr.name);
+    }
+
     private void checkNumberOperand(Token operator, Object object) {
         if (object instanceof Double) return;
         throw new RuntimeError(operator, "Operand must be a number");
@@ -126,6 +134,14 @@ class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
     public Void visitPrintStmt(Stmt.Print stmt) {
         Object value = evaluate(stmt.expression);
         System.out.println(stringify(value));
+        return null;
+    }
+
+    @Override
+    public Void visitVarStmt(Stmt.Var stmt) {
+        Object value = null;
+        if (stmt.initializer != null) value = evaluate(stmt.initializer);
+        environment.define(stmt.name.lexeme, value);
         return null;
     }
 
