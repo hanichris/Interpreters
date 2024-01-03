@@ -1,6 +1,7 @@
 package com.craftinginterpreters.lox;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 class Parser {
@@ -43,11 +44,59 @@ class Parser {
     }
 
     private Stmt statement() {
+        if (match(TokenType.FOR)) return forStatement();
         if (match(TokenType.IF)) return ifStatement();
         if (match(TokenType.PRINT)) return printStatement();
         if (match(TokenType.WHILE)) return whileStatement();
         if (match(TokenType.LEFT_BRACE)) return new Stmt.Block(block());
         return expressionStatement();
+    }
+
+    private Stmt forStatement() {
+        consume(TokenType.LEFT_PAREN, "Expect '(' after 'for'.");
+
+        Stmt initializer;
+        if (match(TokenType.SEMICOLON)) {
+            initializer = null;
+        } else if (match(TokenType.VAR)) {
+            initializer = varDeclaration();
+        } else {
+            initializer = expressionStatement();
+        }
+
+        Expr condition = null;
+        if (!check(TokenType.SEMICOLON)) {
+            condition = expression();
+        }
+        consume(TokenType.SEMICOLON, "Expect ';' after loop condition.");
+
+        Expr increment = null;
+        if (!check(TokenType.RIGHT_PAREN)) {
+            increment = expression();
+        }
+        consume(TokenType.RIGHT_PAREN, "Expect ')' after for clauses.");
+
+        Stmt body = statement();
+        // De-sugar the for loop into the previously seen while loop syntax tree.
+        // Add the increment clause to the end of the body of the while loop.
+        if (increment != null) {
+            body = new Stmt.Block(
+                    Arrays.asList(
+                            body,
+                            new Stmt.Expression(increment)
+                    )
+            );
+        }
+
+        // Take the condition and body and build the loop using a primitive while loop.
+        // If condition is missing, replace it with a `true` for an infinite loop.
+        if (condition == null) condition = new Expr.Literal(true);
+        body = new Stmt.While(condition, body);
+
+        // If there is an initializer it runs once before the loop executes.
+        if (initializer != null) body = new Stmt.Block(Arrays.asList(initializer, body));
+
+        return body;
     }
 
     private Stmt ifStatement() {
