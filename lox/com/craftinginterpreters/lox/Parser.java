@@ -35,6 +35,7 @@ class Parser {
      */
     private Stmt declaration() {
         try {
+            if (match(TokenType.FUN)) return function("function");
             if (match(TokenType.VAR)) return varDeclaration();
             return statement();
         } catch (ParseError error) {
@@ -153,6 +154,32 @@ class Parser {
         Expr expr = expression();
         consume(TokenType.SEMICOLON, "Expect ';' after expression.");
         return new Stmt.Expression(expr);
+    }
+
+    /**
+     * parses a `function` or `method` declaration. It first consumes the identifier
+     * token for the name, then the parameter list and the pair of parentheses around it.
+     * Finally, the body of the function / method is parsed and wrapped into a `function` node
+     * of the AST.
+     */
+    private Stmt.Function function(String kind) {
+        Token name = consume(TokenType.IDENTIFIER, "Expect " + kind + " name.");
+        consume(TokenType.LEFT_PAREN, "Expect '(' after " + kind + " name.");
+        List<Token> parameters = new ArrayList<>();
+        //handles the zero parameter case
+        if (!check(TokenType.RIGHT_PAREN)) {
+            //parse parameters as long as there are commas separating them.
+            do {
+                if (parameters.size() > 254) {
+                    error(peek(), "Can't have more that 255 parameters.");
+                }
+                parameters.add(consume(TokenType.IDENTIFIER, "Expect parameter name"));
+            } while (match(TokenType.COMMA));
+        }
+        consume(TokenType.RIGHT_PAREN, "Expect ')' after parameters");
+        consume(TokenType.LEFT_BRACE, "Expect '{' before " + kind + " body.");
+        List<Stmt> body = block();
+        return new Stmt.Function(name, parameters, body);
     }
 
     /**
