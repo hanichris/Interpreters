@@ -4,9 +4,34 @@ import java.util.ArrayList;
 import java.util.List;
 
 class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
+    // Holds a fixed reference to outermost global environment.
+    final Environment globals = new Environment();
     // Stored as a field so that the variables stay in memory as long
     // as the interpreter is still running.
-    private Environment environment = new Environment();
+    private Environment environment = globals;
+
+    Interpreter() {
+        //Other native functions could be added in a similar manner.
+        globals.define("clock", new LoxCallable() {
+            //Takes no arguments, hence arity is 0.
+            @Override
+            public int arity() {
+                return 0;
+            }
+
+            // calls the corresponding Java function and converts the result
+            // to a double.
+            @Override
+            public Object call(Interpreter interpreter, List<Object> arguments) {
+                return (double) System.currentTimeMillis() / 1000.0;
+            }
+
+            @Override
+            public String toString() {
+                return "<native fn>";
+            }
+        });
+    }
 
     void interpret(List<Stmt> statements) {
         try {
@@ -184,6 +209,13 @@ class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
     @Override
     public Void visitExpressionStmt(Stmt.Expression stmt) {
         evaluate(stmt.expression);
+        return null;
+    }
+
+    @Override
+    public Void visitFunctionStmt(Stmt.Function stmt) {
+        LoxFunction function = new LoxFunction(stmt);
+        environment.define(stmt.name.lexeme, function);
         return null;
     }
 
