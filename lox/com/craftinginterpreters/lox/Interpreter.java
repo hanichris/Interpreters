@@ -236,6 +236,18 @@ class Interpreter implements Expr.Visitor<Object>, Stmt.Visitor<Void> {
         return null;
     }
 
+    /**
+     * if there is a return value, evaluate it else return "nil".
+     * Take the evaluated value and wrap it in a custom exception class
+     * to be thrown.
+     */
+    @Override
+    public Void visitReturnStmt(Stmt.Return stmt) {
+        Object value = null;
+        if (stmt.value != null) value = evaluate(stmt.value);
+        throw new Return(value);
+    }
+
     @Override
     public Void visitVarStmt(Stmt.Var stmt) {
         Object value = null;
