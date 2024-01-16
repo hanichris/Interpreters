@@ -24,6 +24,16 @@ class Resolver implements Expr.Visitor<Void>, Stmt.Visitor<Void> {
         for (Stmt statement : statements) resolve(statement);
     }
 
+    void resolveFunction(Stmt.Function function) {
+        beginScope();
+        for (Token param : function.params) {
+            declare(param);
+            define(param);
+        }
+        resolve(function.body);
+        endScope();
+    }
+
     private void beginScope() {
         scopes.push(new HashMap<String, Boolean>());
     }
@@ -73,6 +83,46 @@ class Resolver implements Expr.Visitor<Void>, Stmt.Visitor<Void> {
         return null;
     }
 
+    @Override
+    public Void visitExpressionStmt(Stmt.Expression stmt) {
+        resolve(stmt.expression);
+        return null;
+    }
+
+    @Override
+    public Void visitFunctionStmt(Stmt.Function stmt) {
+        declare(stmt.name);
+        define(stmt.name);
+
+        resolveFunction(stmt);
+        return null;
+    }
+
+    /**
+     * There is no control flow when performing the resolution
+     * of an if-statement. The condition and both branches are resolved
+     * since either could be reached at runtime.
+     */
+    @Override
+    public Void visitIfStmt(Stmt.If stmt) {
+        resolve(stmt.condition);
+        resolve(stmt.thenBranch);
+        if (stmt.elseBranch != null) resolve(stmt.elseBranch);
+        return null;
+    }
+
+    @Override
+    public Void visitPrintStmt(Stmt.Print stmt) {
+        resolve(stmt.expression);
+        return null;
+    }
+
+    @Override
+    public Void visitReturnStmt(Stmt.Return stmt) {
+        if (stmt.value != null) resolve(stmt.value);
+        return null;
+    }
+
     /**
      * splits binding into two steps: declaration and definition.
      */
@@ -85,9 +135,54 @@ class Resolver implements Expr.Visitor<Void>, Stmt.Visitor<Void> {
     }
 
     @Override
+    public Void visitWhileStmt(Stmt.While stmt) {
+        resolve(stmt.condition);
+        resolve(stmt.body);
+        return null;
+    }
+
+    @Override
     public Void visitAssignExpr(Expr.Assign expr) {
         resolve(expr.value);
         resolveLocal(expr, expr.name);
+        return null;
+    }
+
+    @Override
+    public Void visitBinaryExpr(Expr.Binary expr) {
+        resolve(expr.left);
+        resolve(expr.right);
+        return null;
+    }
+
+    @Override
+    public Void visitCallExpr(Expr.Call expr) {
+        resolve(expr.callee);
+        for (Expr argument : expr.arguments) resolve(argument);
+        return null;
+    }
+
+    @Override
+    public Void visitGroupingExpr(Expr.Grouping expr) {
+        resolve(expr.expression);
+        return null;
+    }
+
+    @Override
+    public Void visitLiteralExpr(Expr.Literal expr) {
+        return null;
+    }
+
+    @Override
+    public Void visitLogicalExpr(Expr.Logical expr) {
+        resolve(expr.left);
+        resolve(expr.right);
+        return null;
+    }
+
+    @Override
+    public Void visitUnaryExpr(Expr.Unary expr) {
+        resolve(expr.right);
         return null;
     }
 
