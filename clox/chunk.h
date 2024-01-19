@@ -29,5 +29,6 @@ typedef struct ar
 
 void initChunk(Chunk *chunk);
 void writeChunk(Chunk *chunk, u_int8_t byte);
+void freeChunk(Chunk *chunk);
 
 #endif // clox_chunk_h
