@@ -1,4 +1,5 @@
 #include <stdlib.h>
+
 #include "chunk.h"
 #include "memory.h"
 
@@ -12,7 +13,7 @@ void initChunk(Chunk *chunk)
 {
 	chunk->count = 0;
 	chunk->capacity = 0;
-	chunk->count = NULL;
+	chunk->code = NULL;
 }
 
 /**
@@ -35,4 +36,13 @@ void writeChunk(Chunk *chunk, uint8_t byte)
 	chunk->code[chunk->count] = byte;
 	chunk->count++;
 
+}
+
+/**
+ * freeChunk - deletes the allocated dynamic array.
+ * @chunk: pointer to a structure defining a dynamic array.
+*/
+void freeChunk(Chunk *chunk) {
+	FREE_ARRAY(uint8_t, chunk->code, chunk->capacity);
+	initChunk(chunk);
 }
