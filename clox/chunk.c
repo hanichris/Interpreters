@@ -42,7 +42,8 @@ void writeChunk(Chunk *chunk, uint8_t byte)
  * freeChunk - deletes the allocated dynamic array.
  * @chunk: pointer to a structure defining a dynamic array.
 */
-void freeChunk(Chunk *chunk) {
+void freeChunk(Chunk *chunk)
+{
 	FREE_ARRAY(uint8_t, chunk->code, chunk->capacity);
 	initChunk(chunk);
 }
