@@ -47,3 +47,14 @@ void freeValueArray(ValueArray* array)
 	FREE_ARRAY(Value, array->values, array->capacity);
 	initValueArray(array);
 }
+
+/**
+ * printValue - print out the value passed to the function using the '%g'
+ * specifier.
+ * @value: value to print out to the console.
+ * Return: void.
+*/
+void printValue(Value value)
+{
+	printf("%g", value);
+}
