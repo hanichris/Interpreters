@@ -1,17 +1,36 @@
 #include <stdio.h>
 
 #include "debug.h"
+#include "value.h"
 
 /**
  * simpleInstruction - simple utility function that displays an instruction.
  * @name: Instrucntion name.
  * @offset: current position in the bytecode.
- * Return: The next offset position.
+ * Return: The position of the next instruction in the chunk.
 */
 static int simpleInstruction(const char *name, int offset)
 {
 	printf("%s\n", name);
 	return (offset + 1);
+}
+
+/**
+ * constantInstruction - Pulls out the constant index from the subsequent
+ * byte in the chunk and prints out the name of the opcode, the index and
+ * the value corresponding to the index since it is known at compile time.
+ * @name: Name of the opcode.
+ * @chunk: pointer to the dynamic array defining a chunk of bytecode.
+ * @offset: current position of the instruction in the bytecode chunk.
+ * Return: The position of the next instruction in the chunk.
+*/
+static int constantInstruction(const char *name, Chunk* chunk, int offset)
+{
+	u_int8_t constant = chunk->code[offset + 1];
+	printf("%-16s %4d '", name, constant);
+	printValue(chunk->constants.values[constant]);
+	printf("'\n");
+	return offset + 2;
 }
 
 /**
@@ -37,7 +56,7 @@ void disassembleChunk(Chunk *chunk, const char *name)
  * dispatch a utility function to display it.
  * @chunk: dynamic array representing a chunk of bytecode.
  * @offset: position on the dynamic array currently being examined.
- * Return: The next offset position in the chunk.
+ * Return: The position of the next instruction in the chunk.
 */
 int disassembleInstruction(Chunk *chunk, int offset)
 {
@@ -46,6 +65,9 @@ int disassembleInstruction(Chunk *chunk, int offset)
 	printf("%04d ", offset);
 	switch (instruction)
 	{
+		case (OP_CONSTANT):
+			return constantInstruction("OP_CONSTANT", chunk, offset);
+
 		case (OP_RETURN):
 			/* code */
 			return (simpleInstruction("OP_RETURN", offset));
