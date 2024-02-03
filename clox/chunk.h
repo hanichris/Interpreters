@@ -6,10 +6,12 @@
 
 /**
  * enum opcode - defines the various opcodes of the bytecode.
- * @OP_RETURN: return instruction operation code.
+ * @OP_CONSTANT: 'load constant' operation code.
+ * @OP_RETURN: 'return instruction' operation code.
 */
 typedef enum opcode
 {
+	OP_CONSTANT,
 	OP_RETURN
 } OpCode;
 
