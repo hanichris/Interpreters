@@ -31,6 +31,7 @@ typedef struct ar
 	int capacity;
 	u_int8_t *code;
 	int* lines;
+	// int lcount;
 	ValueArray constants;
 } Chunk;
 

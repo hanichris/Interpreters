@@ -14,6 +14,7 @@ void initChunk(Chunk *chunk)
 {
 	chunk->count = 0;
 	chunk->capacity = 0;
+	// chunk->lcount = 0;
 	chunk->code = NULL;
 	chunk->lines = NULL;
 	initValueArray(&chunk->constants);
@@ -43,6 +44,22 @@ void writeChunk(Chunk *chunk, uint8_t byte, int line)
 	}
 
 	chunk->code[chunk->count] = byte;
+	// if (chunk->count == 0)
+	// {
+	// 	chunk->lines[chunk->lcount] = line;
+	// 	chunk->lines[chunk->lcount + 1] = 1;
+	// } else
+	// {
+	// 	if (line == chunk->lines[chunk->lcount])
+	// 	{
+	// 		chunk->lines[chunk->lcount + 1] += 1;
+	// 	} else
+	// 	{
+	// 		chunk->lcount += 2;
+	// 		chunk->lines[chunk->lcount] = line;
+	// 		chunk->lines[chunk->lcount + 1] = 1;
+	// 	}
+	// }
 	chunk->lines[chunk->count] = line;
 	chunk->count++;
 
