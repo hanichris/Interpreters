@@ -21,6 +21,8 @@ typedef enum opcode
  * @count: Number of entries currently in the array.
  * @capacity: Current size of the dynamic array.
  * @code: pointer to an array that will vary in size.
+ * @lines: pointer to an array whose elements are the
+ * corresponding line numbers in the bytecode.
  * @constants: store the constants within a chunk
 */
 typedef struct ar
@@ -28,12 +30,13 @@ typedef struct ar
 	int count;
 	int capacity;
 	u_int8_t *code;
+	int* lines;
 	ValueArray constants;
 } Chunk;
 
 
 void initChunk(Chunk *chunk);
-void writeChunk(Chunk *chunk, u_int8_t byte);
+void writeChunk(Chunk *chunk, u_int8_t byte, int line);
 int addConstant(Chunk *chunk, Value value);
 void freeChunk(Chunk *chunk);
 
