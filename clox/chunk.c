@@ -15,16 +15,19 @@ void initChunk(Chunk *chunk)
 	chunk->count = 0;
 	chunk->capacity = 0;
 	chunk->code = NULL;
+	chunk->lines = NULL;
 	initValueArray(&chunk->constants);
 }
 
 /**
- * writeChunk - Append a new byte to the end of a dynamic array.
+ * writeChunk - Append a new byte to the end of a dynamic array
+ * together with its line number in the source code.
  * @chunk: pointer to a struct defining a dynamic array.
  * @byte: fixed-width 8-bit int to append to the end of the array.
+ * @line: the source line the byte of code being written came from.
  * Return: void.
 */
-void writeChunk(Chunk *chunk, uint8_t byte)
+void writeChunk(Chunk *chunk, uint8_t byte, int line)
 {
 	if (chunk->capacity < chunk->count + 1)
 	{
@@ -32,10 +35,15 @@ void writeChunk(Chunk *chunk, uint8_t byte)
 
 		chunk->capacity = GROW_CAPACITY(oldCapacity);
 		chunk->code = GROW_ARRAY(
-			u_int8_t, chunk->code, oldCapacity, chunk->capacity);
+			u_int8_t, chunk->code, oldCapacity, chunk->capacity
+		);
+		chunk->lines = GROW_ARRAY(
+			int, chunk->lines, oldCapacity, chunk->capacity
+		);
 	}
 
 	chunk->code[chunk->count] = byte;
+	chunk->lines[chunk->count] = line;
 	chunk->count++;
 
 }
@@ -61,6 +69,7 @@ int addConstant(Chunk *chunk, Value value)
 void freeChunk(Chunk *chunk)
 {
 	FREE_ARRAY(uint8_t, chunk->code, chunk->capacity);
+	FREE_ARRAY(int, chunk->lines, chunk->capacity);
 	freeValueArray(&chunk->constants);
 	initChunk(chunk);
 }
