@@ -10,12 +10,14 @@ typedef double Value;
  * with its allocated capacity and number of elements in use.
  * @capacity: The allocated size of the array.
  * @count: The number of elements currently in the array.
- * @values: Pointer to an array whose size is unknown at compile time.
+ * @values: Pointer to an array whose size is unknown at compile time
+ * and which will hold the literal values of constants.
 */
-typedef struct valAr{
-    int capacity;
-    int count;
-    Value* values;
+typedef struct valAr
+{
+	int capacity;
+	int count;
+	Value* values;
 } ValueArray;
 
 
