@@ -11,6 +11,14 @@ static InterpretResult run()
 	for (;;)
 	{
 		#if defined(DEBUG_TRACE_EXECUTION)
+		printf("          ");
+		for (Value* slot = vm.stack; slot < vm.stackTop; slot++)
+		{
+			printf("[ ");
+			printValue(*slot);
+			printf(" ]");
+		}
+		printf("\n");
 		disassembleInstruction(vm.chunk, (int)(vm.ip - vm.chunk->code));
 
 		#endif // DEBUG_TRACE_EXECUTION
@@ -20,14 +28,18 @@ static InterpretResult run()
 		switch (instruction = READ_BYTE())
 		{
 			case OP_CONSTANT: {
-				Value value = READ_CONSTANT();
-				printValue(value);
-				printf("\n");
+				Value constant = READ_CONSTANT();
+				push(constant);
 				break;
 			}
 
-			case OP_RETURN:
+			case OP_NEGATE: push(-pop()); break;
+
+			case OP_RETURN: {
+				printValue(pop());
+				printf("\n");
 				return INTERPRET_OK;
+			}
 		}
 	}
 
