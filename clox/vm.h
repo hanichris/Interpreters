@@ -36,8 +36,7 @@ typedef enum status
 void initVM();
 void freeVM();
 InterpretResult interpret(Chunk* chunk);
-// stack protocol supports these two operations.
-void push(Value value);
+void push(Value value); // stack protocol supports these two operations.
 Value pop();
 
 #endif // clox_vm_h
