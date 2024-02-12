@@ -35,7 +35,7 @@ typedef enum status
 
 void initVM();
 void freeVM();
-InterpretResult interpret(Chunk* chunk);
+InterpretResult interpret(const char* source);
 void push(Value value); // stack protocol supports these two operations.
 Value pop();
 
