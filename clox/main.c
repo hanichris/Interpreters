@@ -1,26 +1,85 @@
 #include <stdlib.h>
+#include <string.h>
 
 #include "common.h"
 #include "chunk.h"
 #include "debug.h"
 #include "vm.h"
 
+
+/**
+ * readline - reads in a line from the standard input stream, delimited
+ * by the newline character. 
+*/
+static int readline(char** buffer)
+{
+	#define BUFSIZE 1024
+	int bufsize = BUFSIZE;
+	int idx = 0;
+	*buffer = malloc(sizeof(char) * bufsize);
+	if (*buffer == NULL)
+	{
+		fprintf(stderr, "Error: Not enough memory to allocate to read a line.\n");
+		exit(74);
+	}
+
+	while (true)
+	{
+		// Read a character from the standard input.
+		int c = fgetc(stdin);
+
+		// If a newline character is encountered, replace it
+		// with the null character and break out of the infinite loop.
+		if (c == '\n')
+		{
+			*(*buffer + idx) = '\n';
+			idx++;
+			*(*buffer + idx) = '\0';
+			break;
+		} else if (c == EOF)
+		{
+			free(*buffer);
+			return -1;
+		}
+		
+		*(*buffer + idx) = c;
+		idx++;
+
+		// If the buffer is exceeded, reallocate more memory for it.
+		if (idx >= bufsize)
+		{
+			bufsize += BUFSIZE;
+			*buffer = realloc(*buffer, bufsize);
+			if (*buffer == NULL)
+			{
+				fprintf(stderr, "Error: Not enough memory to allocate to read a line.\n");
+				exit(74);
+			}
+		}
+	}
+
+	#undef BUFSIZE
+	return idx;
+}
+
 /**
  * repl - sets up a REPL.
 */
 static void repl()
 {
-	char line[1024];
+	char* line;
 
 	for (;;)
 	{
 		printf("> ");
-		if (!fgets(line, sizeof(line), stdin))
+		if (readline(&line) == -1)
 		{
 			printf("\n");
 			break;
 		}
-		printf("%s\n", line);
+		printf("String length: %lu\n", strlen(line));
+		free(line);
+		// interpret(line);
 	}
 	
 }
@@ -75,12 +134,11 @@ static char* readFile(const char* path)
 static void runFile(const char* path)
 {
 	char* source = readFile(path);
-	// InterpretResult result = interpret(source);
-	printf("%s\n", source);
+	InterpretResult result = interpret(source);
 	free(source);
 
-	// if (result == INTERPRET_COMPILE_ERROR) exit(65);
-	// if (result == INTERPRET_RUNTIME_ERROR) exit(70);
+	if (result == INTERPRET_COMPILE_ERROR) exit(65);
+	if (result == INTERPRET_RUNTIME_ERROR) exit(70);
 	
 }
 
