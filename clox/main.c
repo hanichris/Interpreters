@@ -1,5 +1,4 @@
 #include <stdlib.h>
-#include <string.h>
 
 #include "common.h"
 #include "chunk.h"
@@ -77,9 +76,8 @@ static void repl()
 			printf("\n");
 			break;
 		}
-		printf("String length: %lu\n", strlen(line));
+		interpret(line);
 		free(line);
-		// interpret(line);
 	}
 	
 }
