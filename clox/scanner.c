@@ -31,6 +31,11 @@ void initScanner(const char* source)
 	scanner.line = 1;
 }
 
+static bool isDigit(char c)
+{
+	return c >= '0' && c <= '9';
+}
+
 /**
  * isAtEnd - Tests to see if the end of the source string has
  * been reached.
@@ -144,18 +149,52 @@ static void skipWhitespace()
 					advance();
 					do
 					{
+						if (peek() == '\n') scanner.line++;
+						
 						advance();
-					} while (peek() != '*' && peekNext() != '/' && !isAtEnd());
+					} while ((peekNext() != '/' && peek() != '*') && !isAtEnd());
 					// consume the '*' and '/' at the end of the block comment.
 					advance();
 					advance(); 
+				} else
+				{
+					return;
 				}
+				break;
 
 			default:
 				return;
 		}
 	}
 	
+}
+
+static Token number()
+{
+	while (isDigit(peek())) advance();
+
+	// Look for a fractional part in the number.
+	if (peek() == '.' && isDigit(peekNext()))
+	{
+		// Consume the '.'.
+		advance();
+		while (isDigit(peek())) advance();
+	}
+	return makeToken(TOKEN_NUMBER);
+}
+
+static Token string()
+{
+	while (peek() != '"' && !isAtEnd())
+	{
+		if (peek() == '\n') scanner.line++;
+		advance();
+	}
+
+	if (isAtEnd()) return errorToken("Unterminated string");
+	// Consume the closing quote.
+	advance();
+	return makeToken(TOKEN_STRING);
 }
 
 /**
@@ -175,6 +214,7 @@ Token scanToken()
 	if (isAtEnd()) return makeToken(TOKEN_EOF);
 
 	char c = advance();
+	if (isDigit(c)) return number();
 	switch (c)
 	{
 		case '(': return makeToken(TOKEN_LEFT_PAREN);
@@ -199,6 +239,7 @@ Token scanToken()
 		case '>': return makeToken(
 			match('=') ? TOKEN_GREATER_EQUAL : TOKEN_GREATER
 		);
+		case '"': return string();
 		
 		default:
 			break;
