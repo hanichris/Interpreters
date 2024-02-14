@@ -1,9 +1,9 @@
-#include "common.h"
+#include "chunk.h"
 #include "compiler.h"
 #include "scanner.h"
 
 
-void compile(const char* source)
+bool compile(const char* source, Chunk* chunk)
 {
 	initScanner(source);
 	int line = -1;
