@@ -35,7 +35,7 @@ typedef struct ar
 {
 	int count;
 	int capacity;
-	u_int8_t *code;
+	uint8_t *code;
 	int* lines;
 	// int lcount;
 	ValueArray constants;
@@ -43,7 +43,7 @@ typedef struct ar
 
 
 void initChunk(Chunk *chunk);
-void writeChunk(Chunk *chunk, u_int8_t byte, int line);
+void writeChunk(Chunk *chunk, uint8_t byte, int line);
 int addConstant(Chunk *chunk, Value value);
 void freeChunk(Chunk *chunk);
 
