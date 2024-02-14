@@ -118,6 +118,13 @@ Value pop()
 	return *vm.stackTop;
 }
 
+/**
+ * interpret - Fills us a chunk with bytecode generated from the
+ * user's program and executes the chunk of bytecode if no
+ * compilation errors were encountered.
+ * @source: user's source program to execute.
+ * Return: INTERPRET_COMPILE_ERROR | INTERPRET_RUNTIME_ERROR | INTERPRET_OK
+*/
 InterpretResult interpret(const char* source)
 {
 	Chunk chunk;
