@@ -13,6 +13,25 @@ typedef struct _parser
 	Token previous;
 } Parser;
 
+/**
+ * enum _precedence - defines the precedence levels of the
+ * language in order from lowest to highest.
+*/
+typedef enum _precedence
+{
+	PREC_NONE,
+	PREC_ASSIGNMENT,	// =
+	PREC_OR,			// or
+	PREC_AND,			// and
+	PREC_EQUALITY,		// == !=
+	PREC_COMPARISON,	// < > <= >=
+	PREC_TERM,			// + -
+	PREC_FACTOR,		// * /
+	PREC_UNARY,			// ! -
+	PREC_CALL,			// . ()
+	PREC_PRIMARY
+} Precedence;
+
 Parser parser;
 Chunk* compilingChunk;
 
@@ -128,10 +147,101 @@ static void emitReturn()
 	emitByte(OP_RETURN);
 }
 
+/**
+ * makeConstant - inserts an entry into the constants table.
+ * Ensures that not too many constants are present in the table.
+ * This is because the `OP_CONSTANT` instruction uses a single
+ * byte for the index operand, thus can store and load only
+ * upto 256 constants in a chunk.
+ * @value: element to insert into the constants table.
+ * Return: index of the element in the constants table.
+*/
+static uint8_t makeConstant(Value value)
+{
+	int constant = addConstant(currentChunk(), value);
+	if (constant > UINT8_MAX)
+	{
+		error("Too many constants in one chunk");
+		return 0;
+	}
+	return (uint8_t)constant;
+	
+}
+
+static void emitConstant(Value value)
+{
+	emitBytes(OP_CONSTANT, makeConstant(value));
+}
+
 static void endCompiler()
 {
 	emitReturn();
 }
+
+/**
+ * parsePrecedence - starts at the current token and parses any
+ * expression at the given precedence level or higher.
+*/
+static void parsePrecedence(Precedence precedence)
+{
+
+}
+
+/**
+ * expression - parse the lowest precedence level and subsumes all
+ * of the higher precedence expressions as well.
+*/
+static void expression()
+{
+	parsePrecedence(PREC_ASSIGNMENT);
+}
+
+/**
+ * grouping - assumes that the initial '(' has already been consumed
+ * and recursively calls back into `expression` to compile the
+ * expression between the parentheses, the parses the closing ')' at
+ * the end.
+*/
+static void grouping()
+{
+	expression();
+	consume(TOKEN_RIGHT_PAREN, "Expect ')' after expression");
+}
+
+/**
+ * number - converts the lexeme for a number literal into a
+ * `double` and generates the bytecode for it through a utility
+ * function.
+*/
+static void number()
+{
+	double value = strtod(parser.previous.start, NULL);
+	emitConstant(value);
+}
+
+/**
+ * unary - obtains the unary operator and utilises
+ * the `PREC_UNARY` precedence level to permit nested
+ * unary expressions to compile the operand and emits the bytecode
+ * to perform the negation
+*/
+static void unary()
+{
+	TokenType operatorType = parser.previous.type;
+
+	parsePrecedence(PREC_UNARY);
+
+	switch (operatorType)
+	{
+		case TOKEN_MINUS:
+			emitByte(OP_NEGATE);
+			break;
+
+		default:
+			return;
+	}
+}
+
 
 bool compile(const char* source, Chunk* chunk)
 {
