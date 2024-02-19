@@ -81,7 +81,7 @@ static void errorAt(Token* token, const char* message)
 	{
 		fprintf(stderr, " at '%.*s'", token->length, token->start);
 	}
-	fprintf(stderr, ": %s\n", message);
+	fprintf(stderr, ": %s.\n", message);
 	parser.hadError = true;
 }
 
@@ -114,7 +114,6 @@ static void errorAtCurrent(const char* message)
 static void advance()
 {
 	parser.previous = parser.current;
-
 	for (;;)
 	{
 		parser.current = scanToken();
@@ -193,14 +192,9 @@ static void endCompiler()
 	emitReturn();
 }
 
-/**
- * parsePrecedence - starts at the current token and parses any
- * expression at the given precedence level or higher.
-*/
-static void parsePrecedence(Precedence precedence)
-{
-
-}
+static void expression();
+static ParseRule* getRule(TokenType type);
+static void parsePrecedence(Precedence precedence);
 
 /**
  * binary - acts as the infix parser for the `TOKEN_PLUS`,
@@ -222,15 +216,6 @@ static void binary()
 		case TOKEN_SLASH: emitByte(OP_DIVIDE); break;
 		default: return;
 	}
-}
-
-/**
- * expression - parse the lowest precedence level and subsumes all
- * of the higher precedence expressions as well.
-*/
-static void expression()
-{
-	parsePrecedence(PREC_ASSIGNMENT);
 }
 
 /**
@@ -321,6 +306,48 @@ ParseRule rules[] = {
 	[TOKEN_ERROR] 			= {NULL, NULL, PREC_NONE},
 	[TOKEN_EOF] 			= {NULL, NULL, PREC_NONE}
 };
+
+/**
+ * parsePrecedence - starts at the current token and parses any
+ * expression at the given precedence level or higher.
+*/
+static void parsePrecedence(Precedence precedence)
+{
+	advance();
+	ParseFn prefixRule = getRule(parser.previous.type)->prefix;
+	if (prefixRule == NULL)
+	{
+		error("Expect expression");
+		return;
+	}
+	prefixRule();
+
+	while (precedence <= getRule(parser.current.type)->precedence)
+	{
+		advance();
+		ParseFn infixRule = getRule(parser.current.type)->infix;
+		infixRule();
+	}
+}
+
+/**
+ * getRule - returns a pointer to the rule at the given index.
+ * @type: token type whose parser functions are to be obtained.
+ * Return: the struct of functions relating to the token type.
+*/
+static ParseRule* getRule(TokenType type)
+{
+	return &rules[type];
+}
+
+/**
+ * expression - parse the lowest precedence level and subsumes all
+ * of the higher precedence expressions as well.
+*/
+static void expression()
+{
+	parsePrecedence(PREC_ASSIGNMENT);
+}
 
 
 bool compile(const char* source, Chunk* chunk)
