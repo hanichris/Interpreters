@@ -1,3 +1,5 @@
+#include <string.h>
+
 #include "debug.h"
 #include "compiler.h"
 #include "vm.h"
@@ -73,6 +75,7 @@ static InterpretResult run()
 */
 static void resetStack()
 {
+	memset(vm.stack, 0, 256 * sizeof(Value));
 	vm.stackTop = vm.stack;
 }
 
@@ -114,6 +117,11 @@ void push(Value value)
 */
 Value pop()
 {
+	if (vm.stackTop == vm.stack)
+	{
+		fprintf(stderr, "Trying to pop from an empty stack\n");
+		return INTMAX_MIN;
+	}
 	vm.stackTop--;
 	return *vm.stackTop;
 }
