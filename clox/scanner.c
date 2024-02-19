@@ -170,9 +170,10 @@ static void skipWhitespace()
 					do
 					{
 						if (peek() == '\n') scanner.line++;
+						if (peek() == '*' && peekNext() == '/') break;
 						
 						advance();
-					} while ((peekNext() != '/' && peek() != '*') && !isAtEnd());
+					} while (!isAtEnd());
 					// consume the '*' and '/' at the end of the block comment.
 					advance();
 					advance(); 
