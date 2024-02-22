@@ -3,7 +3,63 @@
 
 #include "common.h"
 
-typedef double Value;
+/**
+ * enum _value_type - Describes a type "tag" for each of the
+ * type possibilities.
+ * @VAL_BOOL: type "tag" for boolean types.
+ * @VAL_NIL: type "tag" for nil types.
+ * @VAL_NUMBER: type "tag" for number types.
+*/
+typedef enum _value_type
+{
+	VAL_BOOL,
+	VAL_NIL,
+	VAL_NUMBER
+} ValueType;
+
+/**
+ * struct _value - Describes a "tagged union" that is a value with
+ * two parts: a type "tag", and a payload for the actual value.
+ * @type: the type "tag" for the value in question.
+ * @as: the payload for the value.
+*/
+typedef struct _value
+{
+	ValueType type;
+	union
+	{
+		bool boolean;
+		double number;
+	} as;
+} Value;
+
+/**
+ * Make provision for error checking to ensure safe use of the `As_` macros.
+*/
+
+#define IS_BOOL(value)		((value).type == VAL_BOOL)
+#define IS_NIL(value)		((value).type == VAL_NIL)
+#define IS_NUMBER(value)	((value).type == VAL_NUMBER)
+
+/**
+ * Unpacks a clox Value to get the underlying C value.
+ * Given a Value of the right type, unwrap it and return the
+ * corresponding raw C value.
+*/
+
+#define AS_BOOL(value) 	 ((value).as.boolean)
+#define AS_NUMBER(value) ((value).as.number)
+
+/**
+ * Promote a native C value to a clox Value. Each one of these takes a
+ * C value of the appropriate type and produces a Value with the correct
+ * type tag and contains the underlying value. This hoists statically
+ * typed values up into clox's dynamically typed universe.
+*/
+
+#define BOOL_VAL(value)   ((Value){ VAL_BOOL, .as.boolean = value })
+#define NIL_VAL			  ((Value){ VAL_NIL, .as.number = 0 })
+#define NUMBER_VAL(value) ((Value){ VAL_NUMBER, { .number = value } })
 
 /**
  * struct valAr - structure that wraps a pointer to an array
