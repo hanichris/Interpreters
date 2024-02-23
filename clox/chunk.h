@@ -6,13 +6,13 @@
 
 /**
  * enum opcode - defines the various opcodes of the bytecode.
- * @OP_CONSTANT: 'load constant' operation code.
- * @OP_NEGATE: 'negate value' operation code.
- * @OP_RETURN: 'return instruction' operation code.
 */
 typedef enum opcode
 {
 	OP_CONSTANT,
+	OP_NIL,
+	OP_TRUE,
+	OP_FALSE,
 	OP_ADD,
 	OP_SUBTRACT,
 	OP_MULTIPLY,
