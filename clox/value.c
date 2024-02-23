@@ -65,3 +65,22 @@ void printValue(Value value)
 	case VAL_NUMBER: printf("%g", AS_NUMBER(value)); break;
 	}
 }
+
+/**
+ * valuesEqual - determines if two `Value` objects are equal.
+ * @a: fist value to test with.
+ * @b: second value to test against.
+ * Return: true or false.
+*/
+bool valuesEqual(Value a, Value b)
+{
+	if (a.type != b.type) return false;
+
+	switch (a.type)
+	{
+		case VAL_BOOL: return AS_BOOL(a) == AS_BOOL(b);
+		case VAL_NUMBER: return AS_NUMBER(a) == AS_NUMBER(b);
+		case VAL_NIL: return true;
+		default: return false;
+	}
+}
