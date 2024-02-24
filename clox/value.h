@@ -3,18 +3,22 @@
 
 #include "common.h"
 
+typedef struct Obj Obj;
+
 /**
  * enum _value_type - Describes a type "tag" for each of the
  * type possibilities.
  * @VAL_BOOL: type "tag" for boolean types.
  * @VAL_NIL: type "tag" for nil types.
  * @VAL_NUMBER: type "tag" for number types.
+ * @VAL_OBJ: type "tag" for object types.
 */
 typedef enum _value_type
 {
 	VAL_BOOL,
 	VAL_NIL,
-	VAL_NUMBER
+	VAL_NUMBER,
+	VAL_OBJ
 } ValueType;
 
 /**
@@ -30,6 +34,7 @@ typedef struct _value
 	{
 		bool boolean;
 		double number;
+		Obj* obj;
 	} as;
 } Value;
 
@@ -40,6 +45,7 @@ typedef struct _value
 #define IS_BOOL(value)		((value).type == VAL_BOOL)
 #define IS_NIL(value)		((value).type == VAL_NIL)
 #define IS_NUMBER(value)	((value).type == VAL_NUMBER)
+#define IS_OBJ(value)		((value).type == VAL_OBJ)
 
 /**
  * Unpacks a clox Value to get the underlying C value.
@@ -49,7 +55,7 @@ typedef struct _value
 
 #define AS_BOOL(value) 	 ((value).as.boolean)
 #define AS_NUMBER(value) ((value).as.number)
-
+#define AS_OBJ(value)	 ((value).as.obj)
 /**
  * Promote a native C value to a clox Value. Each one of these takes a
  * C value of the appropriate type and produces a Value with the correct
@@ -60,6 +66,7 @@ typedef struct _value
 #define BOOL_VAL(value)   ((Value){ VAL_BOOL, .as.boolean = value })
 #define NIL_VAL			  ((Value){ VAL_NIL, .as.number = 0 })
 #define NUMBER_VAL(value) ((Value){ VAL_NUMBER, { .number = value } })
+#define OBJ_VAL(object)	  ((Value){ VAL_OBJ, { .obj = (Obj*)object }})
 
 /**
  * struct valAr - structure that wraps a pointer to an array
