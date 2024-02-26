@@ -6,7 +6,7 @@
 #include <stdint.h> // for explicitly-sized integer types e.g uint8_t
 #include <stdio.h>
 
-#define DEBUG_PRINT_CODE
-#define DEBUG_TRACE_EXECUTION
+// #define DEBUG_PRINT_CODE
+// #define DEBUG_TRACE_EXECUTION
 
 #endif // clox_common_h
