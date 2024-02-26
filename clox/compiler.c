@@ -270,6 +270,12 @@ static void number()
 	emitConstant(NUMBER_VAL(value));
 }
 
+static void string()
+{
+	emitConstant(OBJ_VAL(copyString(parser.previous.start + 1,
+									parser.previous.length - 2)));
+}
+
 /**
  * unary - obtains the unary operator and utilises
  * the `PREC_UNARY` precedence level to permit nested
@@ -311,7 +317,7 @@ ParseRule rules[] = {
 	[TOKEN_GREATER] 		= {NULL, binary, PREC_COMPARISON},
 	[TOKEN_GREATER_EQUAL] 	= {NULL, binary, PREC_COMPARISON},
 	[TOKEN_IDENTIFIER] 		= {NULL, NULL, PREC_NONE},
-	[TOKEN_STRING] 			= {NULL, NULL, PREC_NONE},
+	[TOKEN_STRING] 			= {string, NULL, PREC_NONE},
 	[TOKEN_NUMBER] 			= {number, NULL, PREC_NONE},
 	[TOKEN_AND] 			= {NULL, NULL, PREC_NONE},
 	[TOKEN_CLASS] 			= {NULL, NULL, PREC_NONE},
