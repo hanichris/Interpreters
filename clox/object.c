@@ -9,6 +9,9 @@
 #define ALLOCATE_OBJ(type, objectType) \
 	(type*)allocateObject(sizeof(type), objectType)
 
+#define ALLOCATE_OBJ_VEC(type, length, objectType) \
+	(type*)allocateObject(sizeof(type) + length * sizeof(char) + 1, objectType)
+
 /**
  * allocateObject - allocates an object of the given size on the heap. Size
  * isn't just the size of the `Obj` but also for the extra payload fields
@@ -37,6 +40,31 @@ static ObjString* allocateString(char* chars, int length)
 	ObjString* string = ALLOCATE_OBJ(ObjString, OBJ_STRING);
 	string->length = length;
 	string->chars = chars;
+	return string;
+}
+
+static ObjStringVec* allocateStringVec(int length)
+{
+	ObjStringVec* string = ALLOCATE_OBJ_VEC(ObjStringVec, length, OBJ_STRING);
+	string->length = length;
+	return string;
+}
+
+ObjStringVec* takeStringVec(ObjStringVec* a, ObjStringVec* b)
+{
+	int length = a->length + b->length;
+	ObjStringVec* string = allocateStringVec(length);
+	memcpy(string->chars, a->chars, a->length);
+	memcpy(string->chars + a->length, b->chars, b->length);
+	string->chars[length] = '\0';
+	return string;
+}
+
+ObjStringVec* copyStringVec(const char* chars, int length)
+{
+	ObjStringVec* string = allocateStringVec(length);
+	memcpy(string->chars, chars, length);
+	string->chars[length] = '\0';
 	return string;
 }
 
