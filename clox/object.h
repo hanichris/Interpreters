@@ -7,8 +7,8 @@
 #define OBJ_TYPE(value)			(AS_OBJ(value)->type)
 #define IS_STRING(value)		isObjType(value, OBJ_STRING)
 
-#define AS_STRING(value)		((ObjString*)AS_OBJ(value))
-#define AS_CSTRING(value)		(((ObjString*)AS_OBJ(value))->chars)
+#define AS_STRING(value)		((ObjStringVec*)AS_OBJ(value))
+#define AS_CSTRING(value)		(((ObjStringVec*)AS_OBJ(value))->chars)
 
 /**
  * enum _obj_type - defines the supported object types.
@@ -45,6 +45,21 @@ struct ObjString
 	char* chars;
 };
 
+/**
+ * struct ObjString - defines the payload for `string` object types.
+ * It contains an array of characters stored in a separate heap-allocated
+ * array, the number of bytes in the array and the state shared by all objects.
+ * @obj: common state shared by all `object` types.
+ * @length: number of bytes in the array of characters (the length of the array).
+ * @chars: flexible array member to hold the character literal.
+*/
+struct ObjStringVec
+{
+	Obj obj;
+	int length;
+	char chars[];
+};
+
 static inline bool isObjType(Value value, ObjType type)
 {
 	return IS_OBJ(value) && AS_OBJ(value)->type == type;
@@ -52,6 +67,8 @@ static inline bool isObjType(Value value, ObjType type)
 
 ObjString* takeString(char* chars, int length);
 ObjString* copyString(const char* chars, int length);
+ObjStringVec* takeStringVec(ObjStringVec* a, ObjStringVec* b);
+ObjStringVec* copyStringVec(const char* chars, int length);
 void printObject(Value value);
 
 
