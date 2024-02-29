@@ -22,10 +22,12 @@ typedef enum _obj_type
  * struct Obj - contains the state shared across all object
  * types. Acts like a 'base class' for objects.
  * @type: the `type` tag of the object.
+ * @next: pointer to the next `Obj` in the chain.
 */
 struct Obj
 {
 	ObjType type;
+	struct Obj* next;
 };
 
 /**
