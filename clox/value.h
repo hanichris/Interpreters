@@ -5,6 +5,7 @@
 
 typedef struct Obj Obj;
 typedef struct ObjString ObjString;
+typedef struct ObjStringVec ObjStringVec;
 
 /**
  * enum _value_type - Describes a type "tag" for each of the
