@@ -48,11 +48,13 @@ static void concatenate()
 /**
  * resetStack - resets the stack by setting the pointer `stackTop`
  * to point to the beginning of the array signifying an empty stack.
+ * Ensures there are no allocated objects.
 */
 static void resetStack()
 {
 	memset(vm.stack, 0, 256 * sizeof(Value));
 	vm.stackTop = vm.stack;
+	vm.objects = NULL;
 }
 
 /**
@@ -193,7 +195,7 @@ void initVM()
 
 void freeVM()
 {
-
+	freeObjects();
 }
 
 /**
