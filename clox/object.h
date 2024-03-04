@@ -36,12 +36,14 @@ struct Obj
  * array, the number of bytes in the array and the state shared by all objects.
  * @obj: common state shared by all `object` types.
  * @length: number of bytes in the array of characters (the length of the array).
+ * @hash: hash code of the string literal.
  * @chars: pointer to the heap-allocated array.
 */
 struct ObjString
 {
 	Obj obj;
 	int length;
+	uint32_t hash;
 	char* chars;
 };
 
@@ -51,12 +53,14 @@ struct ObjString
  * array, the number of bytes in the array and the state shared by all objects.
  * @obj: common state shared by all `object` types.
  * @length: number of bytes in the array of characters (the length of the array).
+ * @hash: hash code of the string literal.
  * @chars: flexible array member to hold the character literal.
 */
 struct ObjStringVec
 {
 	Obj obj;
 	int length;
+	uint32_t hash;
 	char chars[];
 };
 
