@@ -37,6 +37,9 @@ typedef struct _table
 
 void initTable(Table* table);
 void freeTable(Table* table);
+bool tableGet(Table* table, ObjStringVec* key, Value* value);
 bool tableSet(Table* table, ObjStringVec* key, Value value);
+void tableDelete(Table* table, ObjStringVec* key);
+void tableAddAll(Table* from, Table* to);
 
 #endif // clox_table_h
