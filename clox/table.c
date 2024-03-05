@@ -31,6 +31,14 @@ void freeTable(Table* table)
 	initTable(table);
 }
 
+/**
+ * findEntry - takes a key and an array of buckets and determines which
+ * bucket an entry belongs to. It also performs linear probing and collision
+ * handling.
+ * @entries: the array of buckets holding different key/value pairs.
+ * @capacity: the size of the allocated array of entries.
+ * @key: the key being looked for in the array of entries.
+*/
 static Entry* findEntry(Entry* entries, int capacity, ObjStringVec* key)
 {
 	uint32_t index = key->hash % capacity;
@@ -43,6 +51,62 @@ static Entry* findEntry(Entry* entries, int capacity, ObjStringVec* key)
 		}
 		index = (index + 1) % capacity;
 	}
+}
+
+/**
+ * tableGet - Given a key retrieves the value from the hash table.
+ * Detects whether the array of buckets is empty and returns false.
+ * If the entry pointed to by the provided key is null, also returns false.
+ * Finally, if the key points to a non-empty entry, the value is assigned
+ * to the output parameter `value` and the function returns true.
+ * @table: the hash table to search through.
+ * @key: the value's key.
+ * @value: the output parameter to hold the obtained value.
+ * Return: boolean value of whether a value was found.
+*/
+bool tableGet(Table* table, ObjStringVec* key, Value* value)
+{
+	if (table->count == 0) return false;
+
+	Entry* entry = findEntry(table->entries, table->capacity, key);
+	if (entry->key == NULL) return false;
+
+	*value = entry->value;
+	return false;
+}
+
+/**
+ * adjustCapacity - allocates an array of buckets which are initialized to
+ * `NIL_VAL` with `NULL` key strings. It then copies over the non-empty buckets
+ * from the older hash table array to the newly created one before freeing the
+ * memory that the old array occupied.
+ * @table: pointer to the hash table.
+ * @capacity: the size of the hash table.
+ * Return: void.
+*/
+static void adjustCapacity(Table* table, int capacity)
+{
+	Entry* entries = ALLOCATE(Entry, capacity);
+	for (size_t i = 0; i < capacity; i++)
+	{
+		entries[i].key = NULL;
+		entries[i].value = NIL_VAL;
+	}
+
+	for (size_t i = 0; i < table->capacity; i++)
+	{
+		Entry* entry = &table->entries[i];
+		if (entry->key == NULL) continue;
+
+		Entry* dest = findEntry(entries, capacity, entry->key);
+		dest->key = entry->key;
+		dest->value = entry->value;
+	}
+	
+	FREE_ARRAY(Entry, table->entries, table->capacity);
+
+	table->entries = entries;
+	table->capacity = capacity;
 }
 
 /**
@@ -68,4 +132,21 @@ bool tableSet(Table* table, ObjStringVec* key, Value value)
 	entry->value = value;
 	return isNewKey;
 	
+}
+
+/**
+ * tableAddAll - Walks the bucket array of the source hash table
+ * and adds any non-empty entries found to the destination hash table
+ * using the `tableSet` function.
+*/
+void tableAddAll(Table* from, Table* to)
+{
+	for (size_t i = 0; i < from->capacity; i++)
+	{
+		Entry* entry = &from->entries[i];
+		if (entry->key != NULL)
+		{
+			tableSet(to, entry->key, entry->value);
+		}
+	}
 }
