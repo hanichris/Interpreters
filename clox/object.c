@@ -49,6 +49,7 @@ static ObjStringVec* allocateStringVec(int length)
 {
 	ObjStringVec* string = ALLOCATE_OBJ_VEC(ObjStringVec, length, OBJ_STRING);
 	string->length = length;
+	tableSet(&vm.strings, string, NIL_VAL);
 	return string;
 }
 
@@ -78,12 +79,14 @@ ObjStringVec* takeStringVec(ObjStringVec* a, ObjStringVec* b)
 	string->chars[length] = '\0';
 	uint32_t hash = hashString(string->chars, length);
 	string->hash = hash;
+
 	return string;
 }
 
 ObjStringVec* copyStringVec(const char* chars, int length)
 {
 	uint32_t hash = hashString(chars, length);
+	
 	ObjStringVec* string = allocateStringVec(length);
 	memcpy(string->chars, chars, length);
 	string->chars[length] = '\0';
