@@ -33,19 +33,31 @@ void freeTable(Table* table)
 
 /**
  * findEntry - takes a key and an array of buckets and determines which
- * bucket an entry belongs to. It also performs linear probing and collision
- * handling.
+ * bucket an entry belongs to. It returns a pointer to that bucket - the
+ * address of the Entry in the array. It also performs linear probing and
+ * collision handling.
  * @entries: the array of buckets holding different key/value pairs.
  * @capacity: the size of the allocated array of entries.
  * @key: the key being looked for in the array of entries.
+ * Return: entry's address in the array.
 */
 static Entry* findEntry(Entry* entries, int capacity, ObjStringVec* key)
 {
 	uint32_t index = key->hash % capacity;
+	Entry* tombstone = NULL;
 	for (;;)
 	{
 		Entry* entry = &entries[index];
-		if (entry->key == key || entry->key == NULL)
+		if (entry->key == NULL)
+		{
+			if (IS_NIL(entry->value))
+			{
+				return tombstone != NULL ? tombstone : entry;
+			} else
+			{
+				if (tombstone == NULL) tombstone = entry;
+			}
+		} else if (entry->key == key)
 		{
 			return entry;
 		}
@@ -72,7 +84,7 @@ bool tableGet(Table* table, ObjStringVec* key, Value* value)
 	if (entry->key == NULL) return false;
 
 	*value = entry->value;
-	return false;
+	return true;
 }
 
 /**
@@ -93,6 +105,7 @@ static void adjustCapacity(Table* table, int capacity)
 		entries[i].value = NIL_VAL;
 	}
 
+	table->count = 0;
 	for (size_t i = 0; i < table->capacity; i++)
 	{
 		Entry* entry = &table->entries[i];
@@ -101,6 +114,7 @@ static void adjustCapacity(Table* table, int capacity)
 		Entry* dest = findEntry(entries, capacity, entry->key);
 		dest->key = entry->key;
 		dest->value = entry->value;
+		table->count++;
 	}
 	
 	FREE_ARRAY(Entry, table->entries, table->capacity);
@@ -123,15 +137,33 @@ bool tableSet(Table* table, ObjStringVec* key, Value value)
 		int capacity = GROW_CAPACITY(table->capacity);
 		adjustCapacity(table, capacity);
 	}
-	
+
 	Entry* entry = findEntry(table->entries, table->capacity, key);
 	bool isNewKey = entry->key == NULL;
-	if (isNewKey) table->count++;
+	if (isNewKey && IS_NIL(entry->value)) table->count++;
 
 	entry->key = key;
 	entry->value = value;
 	return isNewKey;
-	
+}
+
+/**
+ * tableDelete - replaces an entry with a tombstone which is represented
+ * as a `NULL` key with a `true` value.
+ * @table: The hash table with an entry to be deleted.
+ * @key: the key of the entry to be deleted.
+ * Return: boolean representing the success of the operation.
+*/
+void tableDelete(Table* table, ObjStringVec* key)
+{
+	if (table->count == 0) return false;
+
+	Entry* entry = findEntry(table->entries, table->capacity, key);
+	if (entry->key == NULL) return false;
+
+	entry->key = NULL;
+	entry->value = BOOL_VAL(true);
+	return true;
 }
 
 /**
