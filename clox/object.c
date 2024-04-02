@@ -42,6 +42,7 @@ static ObjString* allocateString(char* chars, int length, uint32_t hash)
 	string->length = length;
 	string->hash = hash;
 	string->chars = chars;
+	// tableSet(&vm.strings, string, NIL_VAL);
 	return string;
 }
 
@@ -49,7 +50,6 @@ static ObjStringVec* allocateStringVec(int length)
 {
 	ObjStringVec* string = ALLOCATE_OBJ_VEC(ObjStringVec, length, OBJ_STRING);
 	string->length = length;
-	tableSet(&vm.strings, string, NIL_VAL);
 	return string;
 }
 
@@ -80,16 +80,29 @@ ObjStringVec* takeStringVec(ObjStringVec* a, ObjStringVec* b)
 	uint32_t hash = hashString(string->chars, length);
 	string->hash = hash;
 
+	ObjStringVec* interned = tableFindString(&vm.strings, string->chars, length, hash);
+	if (interned != NULL) {
+		FREE(ObjStringVec, string);
+		return interned;
+	}
+
+	tableSet(&vm.strings, string, NIL_VAL);
 	return string;
 }
 
 ObjStringVec* copyStringVec(const char* chars, int length)
 {
 	uint32_t hash = hashString(chars, length);
-	
+
+	ObjStringVec* interned = tableFindString(&vm.strings, chars, length, hash);
+	if (interned != NULL) return interned;
+
 	ObjStringVec* string = allocateStringVec(length);
 	memcpy(string->chars, chars, length);
 	string->chars[length] = '\0';
+	string->hash = hash;
+
+	tableSet(&vm.strings, string, NIL_VAL);
 	return string;
 }
 
@@ -102,6 +115,9 @@ ObjString* takeString(char* chars, int length)
 ObjString* copyString(const char* chars, int length)
 {
 	uint32_t hash = hashString(chars, length);
+	// ObjString* interned = tableFindString(&vm.strings, chars, length, hash);
+	// if (interned != NULL) return interned;
+	
 	char* heapChars = ALLOCATE(char, length + 1);
 	memcpy(heapChars, chars, length);
 	heapChars[length] = '\0';
