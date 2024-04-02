@@ -49,8 +49,8 @@ struct ObjString
 
 /**
  * struct ObjString - defines the payload for `string` object types.
- * It contains an array of characters stored in a separate heap-allocated
- * array, the number of bytes in the array and the state shared by all objects.
+ * It contains an array of characters, the number of bytes in the array
+ * and the state shared by all objects.
  * @obj: common state shared by all `object` types.
  * @length: number of bytes in the array of characters (the length of the array).
  * @hash: hash code of the string literal.
