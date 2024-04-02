@@ -39,7 +39,8 @@ void initTable(Table* table);
 void freeTable(Table* table);
 bool tableGet(Table* table, ObjStringVec* key, Value* value);
 bool tableSet(Table* table, ObjStringVec* key, Value value);
-void tableDelete(Table* table, ObjStringVec* key);
+bool tableDelete(Table* table, ObjStringVec* key);
 void tableAddAll(Table* from, Table* to);
+ObjStringVec* tableFindString(Table* table, const char* chars, int length, uint32_t hash);
 
 #endif // clox_table_h
