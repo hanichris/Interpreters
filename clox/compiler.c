@@ -429,11 +429,46 @@ static void printStatement()
 }
 
 /**
+ * synchronize - performs error synchronization. This involves
+ * indiscriminately skipping tokens until a statement boundary
+ * is encountered whenever the compiler enters panic mode.
+*/
+static void synchronize()
+{
+	parser.panicMode = false;
+
+	while (parser.current.type != TOKEN_EOF)
+	{
+		if(parser.previous.type == TOKEN_SEMICOLON) return;
+		switch (parser.current.type)
+		{
+			case TOKEN_CLASS:
+			case TOKEN_FUN:
+			case TOKEN_VAR:
+			case TOKEN_IF:
+			case TOKEN_FOR:
+			case TOKEN_WHILE:
+			case TOKEN_PRINT:
+			case TOKEN_RETURN:
+				return;
+
+			default:
+				;
+		}
+		advance();
+	}
+	
+}
+
+/**
  * declaration - compiles a single declaration.
 */
 static void declaration()
 {
 	statement();
+
+	if (parser.panicMode) synchronize();
+
 }
 
 /**
