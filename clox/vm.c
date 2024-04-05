@@ -154,16 +154,22 @@ static InterpretResult run()
 					runtimeError("Operand must be a number");
 					return INTERPRET_RUNTIME_ERROR;
 				}
-				
+
 				// push(-pop()); break;
 				*(vm.stack + (int)(vm.stackTop - vm.stack) - 1) =
 					NUMBER_VAL(-AS_NUMBER(*(vm.stack + (int)(vm.stackTop - vm.stack) - 1)));
 				break;
 			}
 
-			case OP_RETURN: {
+			case OP_POP: pop(); break;
+
+			case OP_PRINT: {
 				printValue(pop());
 				printf("\n");
+				break;
+			}
+
+			case OP_RETURN: {
 				return INTERPRET_OK;
 			}
 		}
@@ -172,7 +178,7 @@ static InterpretResult run()
 	#undef BINARY_OP
 	#undef READ_CONSTANT
 	#undef READ_BYTE
-	
+
 }
 
 /**
