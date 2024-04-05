@@ -125,7 +125,6 @@ static void advance()
 		if (parser.current.type != TOKEN_ERROR) break;
 		errorAtCurrent(parser.current.start);
 	}
-	
 }
 
 /**
@@ -142,6 +141,34 @@ static void consume(TokenType type, const char* message)
 		return;
 	}
 	errorAtCurrent(message);
+}
+
+/**
+ * check - Returns true if the current token has the same
+ * type as the given type.
+ * @type: the given token type.
+ * @Return: boolean value denoting the success of the check
+ * operation.
+*/
+static bool check(TokenType type)
+{
+	return parser.current.type == type;
+}
+
+/**
+ * match - helper function to detect the type of the current token.
+ * If the current token matches the given token, it is consumed. Else,
+ * it is left alone and a `false` is returned from the function. Otherwise,
+ * the function returns a `true` value.
+ * @type: The given token type to match the current token.
+ * @Return: boolean value denoting the success of the operation.
+*/
+static bool match(TokenType type)
+{
+	if (!check(type)) return false;
+	advance();
+
+	return true;	
 }
 
 static void emitByte(uint8_t byte)
@@ -205,6 +232,8 @@ static void endCompiler()
 }
 
 static void expression();
+static void statement();
+static void declaration();
 static ParseRule* getRule(TokenType type);
 static void parsePrecedence(Precedence precedence);
 
@@ -381,6 +410,55 @@ static void expression()
 	parsePrecedence(PREC_ASSIGNMENT);
 }
 
+/***/
+static void expressionStatement()
+{
+	expression();
+	consume(TOKEN_SEMICOLON, "Expect ';' after expression.");
+	emitByte(OP_POP);
+}
+
+/**
+ * printStatement - evaluates an expression and prints the result.
+*/
+static void printStatement()
+{
+	expression();
+	consume(TOKEN_SEMICOLON, "Expect ';' after value");
+	emitByte(OP_PRINT);
+}
+
+/**
+ * declaration - compiles a single declaration.
+*/
+static void declaration()
+{
+	statement();
+}
+
+/**
+ * statement - process a statement which can either be a
+ * `declaration statement` that binds a name to a value or the other
+ * kinds of statments like print, control flow etc.
+ * The grammar rule is for a statement is as presented:
+ * 		`statement` -> `exprStmt`
+ * 					| 	`forStmt`
+ * 					| 	`ifStmt`
+ * 					| 	`printStmt`
+ * 					| 	`returnStmt`
+ * 					| 	`whileStmt`
+ * 					| 	`block` ;
+*/
+static void statement()
+{
+	if (match(TOKEN_PRINT))
+	{
+		printStatement();
+	} else {
+		expressionStatement();
+	}
+}
+
 
 bool compile(const char* source, Chunk* chunk)
 {
@@ -391,8 +469,12 @@ bool compile(const char* source, Chunk* chunk)
 	parser.panicMode = false;
 
 	advance();
-	expression();
-	consume(TOKEN_EOF, "Expect end of expression.");
+	// support a sequence of declarations.
+	while (!match(TOKEN_EOF))
+	{
+		declaration();
+	}
+	
 	endCompiler();
 	return !parser.hadError;
 }
