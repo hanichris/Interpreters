@@ -392,6 +392,36 @@ static void parsePrecedence(Precedence precedence)
 }
 
 /**
+ * identifierConstant - takes a token and adds its lexeme to the chunk's
+ * constant table as a string, returning the index of that constant in
+ * the constant's table.
+ * @name: pointer to the token.
+ * @Return: index of the token lexeme within the constant's table.
+*/
+static uint8_t identifierConstant(Token* name)
+{
+	return makeConstant(OBJ_VAL(copyStringVec(name->start, name->length)));
+}
+
+static uint8_t parseVariable(const char* errorMessage)
+{
+	consume(TOKEN_IDENTIFIER, errorMessage);
+	return identifierConstant(&parser.previous);
+}
+
+/**
+ * defineVariable - outputs the bytecode instruction defining the new
+ * variable and stores its initial value. The index of the varible's name
+ * in the constants table is the instruction's operand.
+ * @global: index of the variable within the constants table.
+ * @Return: void.
+*/
+static void defineVariable(uint8_t global)
+{
+	emitBytes(OP_DEFINE_GLOBAL, global);
+}
+
+/**
  * getRule - returns a pointer to the rule at the given index.
  * @type: token type whose parser functions are to be obtained.
  * Return: the struct of functions relating to the token type.
@@ -410,7 +440,33 @@ static void expression()
 	parsePrecedence(PREC_ASSIGNMENT);
 }
 
-/***/
+/**
+ * varDeclaration - parses the statement with the following syntax:
+ * `var <variable_name> = <optional_initializer expression>;`. If the
+ * expression is absent, the compiler desugars the variable exression:
+ * `var a;` ==> `var a = nil;`. 
+*/
+static void varDeclaration()
+{
+	uint8_t global = parseVariable("Expect variable name");
+
+	if (match(TOKEN_EQUAL))
+	{
+		expression();
+	} else {
+		emitByte(OP_NIL);
+	}
+
+	consume(TOKEN_SEMICOLON, "Expect ';' after variable declaration");
+
+	defineVariable(global);
+}
+
+/**
+ * expressionStatement - parses an expression that is followed by a
+ * semicolon. It ends by emitting the OP_POP opcode which discards
+ * the result of the expression.
+*/
 static void expressionStatement()
 {
 	expression();
@@ -465,7 +521,15 @@ static void synchronize()
 */
 static void declaration()
 {
-	statement();
+	if (match(TOKEN_VAR))
+	{
+		varDeclaration();
+	} else
+	{
+		statement();
+	}
+	
+	
 
 	if (parser.panicMode) synchronize();
 
