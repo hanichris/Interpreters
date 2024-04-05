@@ -419,7 +419,7 @@ static void expressionStatement()
 }
 
 /**
- * printStatement - evaluates an expression and prints the result.
+ * printStatement - evaluates an expression and emits print instruction.
 */
 static void printStatement()
 {
