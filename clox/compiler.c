@@ -238,6 +238,36 @@ static ParseRule* getRule(TokenType type);
 static void parsePrecedence(Precedence precedence);
 
 /**
+ * identifierConstant - takes a token and adds its lexeme to the chunk's
+ * constant table as a string, returning the index of that constant in
+ * the constant's table.
+ * @name: pointer to the token.
+ * @Return: index of the token lexeme within the constant's table.
+*/
+static uint8_t identifierConstant(Token* name)
+{
+	return makeConstant(OBJ_VAL(copyStringVec(name->start, name->length)));
+}
+
+static uint8_t parseVariable(const char* errorMessage)
+{
+	consume(TOKEN_IDENTIFIER, errorMessage);
+	return identifierConstant(&parser.previous);
+}
+
+/**
+ * defineVariable - outputs the bytecode instruction defining the new
+ * variable and stores its initial value. The index of the varible's name
+ * in the constants table is the instruction's operand.
+ * @global: index of the variable within the constants table.
+ * @Return: void.
+*/
+static void defineVariable(uint8_t global)
+{
+	emitBytes(OP_DEFINE_GLOBAL, global);
+}
+
+/**
  * binary - acts as the infix parser for the `TOKEN_PLUS`,
  * `TOKEN_MINUS`, `TOKEN_STAR` and `TOKEN_SLASH` token types.
  * It takes into consideration when parsing the right operand
@@ -305,6 +335,16 @@ static void string()
 									   parser.previous.length - 2)));
 }
 
+static void namedVariable(Token name){
+	uint8_t arg = identifierConstant(&name);
+	emitBytes(OP_GET_GLOBAL, arg);
+}
+
+static void variable()
+{
+	namedVariable(parser.previous);
+}
+
 /**
  * unary - obtains the unary operator and utilises
  * the `PREC_UNARY` precedence level to permit nested
@@ -345,7 +385,7 @@ ParseRule rules[] = {
 	[TOKEN_LESS_EQUAL] 		= {NULL, binary, PREC_COMPARISON},
 	[TOKEN_GREATER] 		= {NULL, binary, PREC_COMPARISON},
 	[TOKEN_GREATER_EQUAL] 	= {NULL, binary, PREC_COMPARISON},
-	[TOKEN_IDENTIFIER] 		= {NULL, NULL, PREC_NONE},
+	[TOKEN_IDENTIFIER] 		= {variable, NULL, PREC_NONE},
 	[TOKEN_STRING] 			= {string, NULL, PREC_NONE},
 	[TOKEN_NUMBER] 			= {number, NULL, PREC_NONE},
 	[TOKEN_AND] 			= {NULL, NULL, PREC_NONE},
@@ -389,36 +429,6 @@ static void parsePrecedence(Precedence precedence)
 		ParseFn infixRule = getRule(parser.previous.type)->infix;
 		infixRule();
 	}
-}
-
-/**
- * identifierConstant - takes a token and adds its lexeme to the chunk's
- * constant table as a string, returning the index of that constant in
- * the constant's table.
- * @name: pointer to the token.
- * @Return: index of the token lexeme within the constant's table.
-*/
-static uint8_t identifierConstant(Token* name)
-{
-	return makeConstant(OBJ_VAL(copyStringVec(name->start, name->length)));
-}
-
-static uint8_t parseVariable(const char* errorMessage)
-{
-	consume(TOKEN_IDENTIFIER, errorMessage);
-	return identifierConstant(&parser.previous);
-}
-
-/**
- * defineVariable - outputs the bytecode instruction defining the new
- * variable and stores its initial value. The index of the varible's name
- * in the constants table is the instruction's operand.
- * @global: index of the variable within the constants table.
- * @Return: void.
-*/
-static void defineVariable(uint8_t global)
-{
-	emitBytes(OP_DEFINE_GLOBAL, global);
 }
 
 /**
@@ -539,7 +549,7 @@ static void declaration()
  * statement - process a statement which can either be a
  * `declaration statement` that binds a name to a value or the other
  * kinds of statments like print, control flow etc.
- * The grammar rule is for a statement is as presented:
+ * The grammar rule for a statement is presented as:
  * 		`statement` -> `exprStmt`
  * 					| 	`forStmt`
  * 					| 	`ifStmt`
