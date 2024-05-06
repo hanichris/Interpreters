@@ -88,3 +88,19 @@ bool valuesEqual(Value a, Value b)
 		default: return false;
 	}
 }
+
+/**
+ * findConstant - looks for the value argument within the array of
+ * constants. If found, the given index is returned, esle returns
+ * -1.
+ * @ar: pointer to an array of `values`.
+ * @value: value to search for in the array.
+ * Return: index of the value within the array or -1 if not found.
+*/
+int findValue(ValueArray* ar, Value value)
+{
+	for (int i = 0; i < ar->count; i++)
+		if (valuesEqual(value, ar->values[i]))
+			return i;
+	return -1;
+}
