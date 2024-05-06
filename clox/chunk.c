@@ -80,6 +80,18 @@ int addConstant(Chunk *chunk, Value value)
 }
 
 /**
+ * findConstant - A convenience method to search for a constant
+ * stored within a chunk's constants array.
+ * @chunk: pointer to a struct defining a dynamic array.
+ * @value: Constant value to be searched for.
+ * Return: index of the constant value or -1 if the constant is not found.
+*/
+int findConstant(Chunk* chunk, Value value)
+{
+	return findValue(&chunk->constants, value);
+}
+
+/**
  * freeChunk - deletes the allocated dynamic array.
  * @chunk: pointer to a structure defining a dynamic array.
 */
