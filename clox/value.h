@@ -86,6 +86,7 @@ typedef struct valAr
 } ValueArray;
 
 bool valuesEqual(Value a, Value b);
+int findValue(ValueArray* ar, Value value);
 void initValueArray(ValueArray* array);
 void writeValueArray(ValueArray* array, Value value);
 void freeValueArray(ValueArray* array);
