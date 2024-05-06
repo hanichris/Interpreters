@@ -246,7 +246,13 @@ static void parsePrecedence(Precedence precedence);
 */
 static uint8_t identifierConstant(Token* name)
 {
-	return makeConstant(OBJ_VAL(copyStringVec(name->start, name->length)));
+	Value strObject = OBJ_VAL(copyStringVec(name->start, name->length));
+	int index = findConstant(currentChunk(), strObject);
+	if (index == -1)
+	{
+		return makeConstant(strObject);
+	}
+	return (uint8_t)index;
 }
 
 static uint8_t parseVariable(const char* errorMessage)
