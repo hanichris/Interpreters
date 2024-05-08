@@ -270,6 +270,16 @@ static void endCompiler()
 	
 }
 
+static void beginScope()
+{
+	current->scopeDepth++;
+}
+
+static void endScope()
+{
+	current->scopeDepth--;
+}
+
 static void expression();
 static void statement();
 static void declaration();
@@ -511,6 +521,21 @@ static void expression()
 }
 
 /**
+ * block - parses declarations until it encounters a right curly brace.
+ * Executing a block simply implies executing the statements it contains
+ * one after the other.
+*/
+static void block()
+{
+	while (!check(TOKEN_RIGHT_BRACE) && !check(TOKEN_EOF))
+	{
+		declaration();
+	}
+	
+	consume(TOKEN_RIGHT_BRACE, "Expect '}' after a block");
+}
+
+/**
  * varDeclaration - parses the statement with the following syntax:
  * `var <variable_name> = <optional_initializer expression>;`. If the
  * expression is absent, the compiler desugars the variable exression:
@@ -623,6 +648,11 @@ static void statement()
 	if (match(TOKEN_PRINT))
 	{
 		printStatement();
+	} else if (match(TOKEN_LEFT_BRACE))
+	{
+		beginScope();
+		block();
+		endScope();
 	} else {
 		expressionStatement();
 	}
