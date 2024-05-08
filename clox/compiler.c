@@ -52,7 +52,39 @@ typedef struct _rule
 	Precedence precedence;
 } ParseRule;
 
+/**
+ * struct _local - Captures a local variable by storing its name
+ * and the scope depth where it was caputred.
+ * @name: Token identifier for the local variable.
+ * @depth: The scope depth where the local variable was captured at.
+*/
+typedef struct _local
+{
+	Token name;
+	int depth;
+} Local;
+
+/**
+ * struct compiler - state management for local variables and
+ * lexical scoping.
+ * @locals: flat array of all the locals in scope during each
+ * point of the compilation process. Kept in the order of appearance
+ * within the code.
+ * @localcount: tracks how many locals are in scope.
+ * @scopedepth: number of blocks surrounding the current bit of
+ * code compiling. 
+*/
+typedef struct compiler
+{
+	//insruction operand is only a single byte which limits no. of local
+	// variables that can exits within a scope.
+	Local locals[UINT8_COUNT];
+	int localCount;
+	int scopeDepth;
+} Compiler;
+
 Parser parser;
+Compiler* current = NULL;
 Chunk* compilingChunk;
 
 static Chunk* currentChunk()
@@ -217,6 +249,13 @@ static uint8_t makeConstant(Value value)
 static void emitConstant(Value value)
 {
 	emitBytes(OP_CONSTANT, makeConstant(value));
+}
+
+static void initCompiler(Compiler* compiler)
+{
+	compiler->localCount = 0;
+	compiler->scopeDepth = 0;
+	current = compiler;
 }
 
 static void endCompiler()
@@ -593,6 +632,8 @@ static void statement()
 bool compile(const char* source, Chunk* chunk)
 {
 	initScanner(source);
+	Compiler compiler;
+	initCompiler(&compiler);
 	compilingChunk = chunk;
 
 	parser.hadError = false;
