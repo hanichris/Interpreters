@@ -313,9 +313,76 @@ static uint8_t identifierConstant(Token* name)
 	return (uint8_t)index;
 }
 
+static bool identifiersEqual(Token* a, Token* b)
+{
+	if (a->length != b->length) return false;
+	return memcmp(a->start, b->start, a->length) == 0;
+}
+
+static int resolveLocal(Compiler* compiler, Token* name)
+{
+	for (int i = compiler->localCount - 1; i >= 0; i--)
+	{
+		Local* local = &compiler->locals[i];
+		if (identifiersEqual(name, &local->name))
+		{
+			if (local->depth == -1)
+			{
+				error("Can't read local variable in its own initializer");
+			}
+			
+			return i;
+		}
+	}
+	return -1;
+	
+}
+
+static void addLocal(Token name)
+{
+	if (current->localCount == UINT8_COUNT)
+	{
+		error("Too many local variables in the function.");
+		return;
+	}
+	
+	Local* local = &current->locals[current->localCount++];
+	local->name = name;
+	local->depth = -1;
+}
+
+/**
+ * declareVariable - point where the compiler records the existence of the
+ * variable.
+*/
+static void declareVariable()
+{
+	if (current->scopeDepth == 0) return;
+
+	Token* name = &parser.previous;
+	for (int i = current->localCount - 1; i >= 0; --i)
+	{
+		Local* local = &current->locals[i];
+		if (local->depth != -1 && local->depth < current->scopeDepth)
+		{
+			break;
+		}
+		if (identifiersEqual(name, &local->name))
+		{
+			error("Already a variable with this name in this scope.");
+		}
+	}
+
+	addLocal(*name);
+}
+
 static uint8_t parseVariable(const char* errorMessage)
 {
 	consume(TOKEN_IDENTIFIER, errorMessage);
+	declareVariable();
+	//return a dummy table index if within a local scope.
+	if (current->scopeDepth > 0) return 0;
+
 	return identifierConstant(&parser.previous);
 }
 
