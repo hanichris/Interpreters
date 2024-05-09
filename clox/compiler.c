@@ -319,6 +319,10 @@ static uint8_t parseVariable(const char* errorMessage)
 	return identifierConstant(&parser.previous);
 }
 
+static void markInitialized(){
+	current->locals[current->localCount - 1].depth = current->scopeDepth;
+}
+
 /**
  * defineVariable - outputs the bytecode instruction defining the new
  * variable and stores its initial value. The index of the varible's name
@@ -328,6 +332,12 @@ static uint8_t parseVariable(const char* errorMessage)
 */
 static void defineVariable(uint8_t global)
 {
+	if (current->scopeDepth > 0)
+	{
+		markInitialized();
+		return;
+	}
+	
 	emitBytes(OP_DEFINE_GLOBAL, global);
 }
 
