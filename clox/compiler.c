@@ -221,6 +221,21 @@ static void emitBytes(uint8_t byte1, uint8_t byte2)
 	emitByte(byte2);
 }
 
+/**
+ * emitJump - emits a bytecode instruction and writes a placeholder value
+ * for the jump offset
+ * @instruction: opcode instruction.
+ * Return: the offset of the emitted instruction in the chunk.
+*/
+static int emitJump(uint8_t instruction)
+{
+	emitByte(instruction);
+	//use a 16-bit offset to support jumping over 65,536 bytes of code.
+	emitByte(0xff);
+	emitByte(0xff);
+	return currentChunk()->count - 2;
+}
+
 static void emitReturn()
 {
 	emitByte(OP_RETURN);
@@ -250,6 +265,25 @@ static uint8_t makeConstant(Value value)
 static void emitConstant(Value value)
 {
 	emitBytes(OP_CONSTANT, makeConstant(value));
+}
+
+/**
+ * patchJump - goes into the bytecode and replaces the placeholder operand
+ * with the calculated jump offset. Called before emitting the next
+ * instruction that the jump will land on. Uses the current bytecode count
+ * to determine how far to jump.
+ * @offset: the position in the bytecode holding the placeholder values.
+*/
+static void patchJump(int offset)
+{
+	// -2 to adjust for the jump instruction itself.
+	int jump = currentChunk()->count - offset - 2;
+	if (jump > UINT16_MAX)
+	{
+		error("Too much code to jump over");
+	}
+	currentChunk()->code[offset] = (jump >> 8) & 0xff;
+	currentChunk()->code[offset + 1] = jump & 0xff;
 }
 
 static void initCompiler(Compiler* compiler)
@@ -668,6 +702,26 @@ static void expressionStatement()
 }
 
 /**
+ * ifStatement - compiles the if statement.
+*/
+static void ifStatement()
+{
+	consume(TOKEN_LEFT_PAREN, "Expect '(' after 'if'.");
+	expression();
+	consume(TOKEN_RIGHT_PAREN, "Expect ')' after condition.");
+
+	int thenJump = emitJump(OP_JUMP_IF_FALSE);
+	emitByte(OP_POP);
+	statement();
+	int elseJump = emitJump(OP_JUMP);
+	patchJump(thenJump);
+	emitByte(OP_POP);
+
+	if (match(TOKEN_ELSE)) statement();
+	patchJump(elseJump);
+}
+
+/**
  * printStatement - evaluates an expression and emits print instruction.
 */
 static void printStatement()
@@ -746,6 +800,9 @@ static void statement()
 	if (match(TOKEN_PRINT))
 	{
 		printStatement();
+	} else if (match(TOKEN_IF))
+	{
+		ifStatement();
 	} else if (match(TOKEN_LEFT_BRACE))
 	{
 		beginScope();
